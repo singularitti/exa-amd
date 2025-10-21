@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 from shutil import copyfileobj
 
+from tools.logging_config import amd_logger
 from tools.config_labels import ConfigKeys as CK
 
 
@@ -52,7 +53,8 @@ class ConfigManager:
         CK.PARSL_CONFIG: (
             str, "Parsl config name, previously registered (required)."),
         CK.INITIAL_STRS: (
-            str, "Path to the directory that containts the initial crystal structures.")
+            str, "Path to the directory that containts the initial crystal structures (required)."),
+        CK.PARSL_CONFIGS_DIR: (str, "Path to the directory that contains the Parsl configurations (required).")
     }
 
     # optional arguments: if absent, assign defaults.

@@ -8,6 +8,7 @@
     "initial_structures_dir":"<abs_path_to>/initial_structures",
 
     "parsl_config": "perlmutter_premium",
+    "parsl_configs_dir": "<abs_path_to>/parsl_configs",
 
     "pre_processing_nnodes":4,
 

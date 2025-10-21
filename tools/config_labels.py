@@ -16,6 +16,7 @@ class ConfigKeys:
     GPU_ACCOUNT = "gpu_account"
     CONFIG_FILE = "config"
     INITIAL_STRS = "initial_structures_dir"
+    PARSL_CONFIGS_DIR = "parsl_configs_dir"
 
     # optional
     EF_THR = "formation_energy_threshold"

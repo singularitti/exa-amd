@@ -17,8 +17,8 @@ from sklearn import metrics
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
-from cgcnn.data import CIFData, collate_pool
-from cgcnn.model import CrystalGraphConvNet
+from ml_models.cgcnn.data import CIFData, collate_pool
+from ml_models.cgcnn.model import CrystalGraphConvNet
 
 
 def predict_cgcnn(

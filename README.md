@@ -51,15 +51,17 @@ python exa_amd.py --config your_config.json
 ## Registering a new Parsl configuration
 We currently support the automated workflows on NERSC's Perlmutter and LANL's Chicoma computers. If you would like to run on a different computing system, you must add your own Parsl configuration following these steps:
 
-1. Create a new file in the `parsl_configs` directory, similar to the one in [parsl_configs/chicoma.py](parsl_configs/chicoma.py)
+1. Create a new file in your configs directory (e.g., `parsl_configs/`), similar to the one in [parsl_configs/chicoma.py](parsl_configs/chicoma.py)
 2. Add a configuration class with a unique name `<my_parsl_config_name>` 
 3. Modify Parsl's execution settings. More details can be found in [Parsl's official documentation](https://parsl.readthedocs.io/en/latest/)
-4. Register your configuration class by calling `register_parsl_config()`
-5. Modify your json configuration file accordingly by setting `parsl_config` to `<my_parsl_config_name>`
+4. Register your configuration class by calling `register_parsl_config()` inside that file
+5. Modify your json configuration file accordingly by setting `parsl_config` to `<my_parsl_config_name>` and `parsl_configs_dir` to the absolute path of your configs directory (e.g., `<abs_path_to>/parsl_configs`)
 
 
 ## Usage (CLI)
 - Modify the `initial_structures_dir` field in the json configuration file to indicate the absolute path to the `initial_structures` directory
+
+- Modify the `parsl_configs_dir` field in the json configuration file to indicate the absolute path to the Parsl configurations (e.g., `<abs_path>/parsl_configs`)
 
 - Run exa-AMD with the json file created in the prerequisite step:
     ```bash

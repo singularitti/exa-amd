@@ -1,7 +1,12 @@
 
+import os
 import pkgutil
 import importlib
+import importlib.util
+import sys
+from pathlib import Path
 
+from tools.logging_config import amd_logger
 from tools.config_labels import ConfigKeys as CK
 
 # Global registry mapping a config name to its Parsl config class.
@@ -26,42 +31,42 @@ def register_parsl_config(config_name, config_class):
     PARSL_CONFIG_REGISTRY[config_name] = config_class
 
 
-def auto_register_configs(package_name):
+def auto_register_configs(configs_dir):
     """
-    Automatically discover and import all modules that contains a Parsl Configuration.
+    Automatically discover and import all modules that contain a Parsl Configuration.
 
-    Scans the specified package and detects the calls to :func:`register_parsl_config`,
+    Scans the specified **directory** and detects the calls to :func:`register_parsl_config`,
     so the Parsl configurations can be selected at runtime.
 
     Args:
-        package_name (str)
+        configs_dir (str): Path to a directory containing user Parsl config *.py files.
 
     Raises:
         SystemExit: If the specified package cannot be found or loaded.
     """
-    spec = importlib.util.find_spec(package_name)
-    if spec is None or spec.submodule_search_locations is None:
-        amd_logger.critical(
-            f"Could not find package {package_name} for auto-registration.")
-
-    for loader, module_name, is_pkg in pkgutil.iter_modules(
-            spec.submodule_search_locations):
-        full_module_name = f"{package_name}.{module_name}"
-        importlib.import_module(full_module_name)
+    if not os.path.isdir(configs_dir):
+        raise SystemExit(f"Config directory '{configs_dir}' not found or not a directory.")
+    dirpath = Path(configs_dir)
+    for py in sorted(dirpath.glob("*.py")):
+        if py.name.startswith("_"):
+            continue
+        modname = f"_exa_amd_parsl_cfg.{py.stem}_{abs(hash(py)) & 0xFFFF:x}"
+        spec = importlib.util.spec_from_file_location(modname, py)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[modname] = module
+            spec.loader.exec_module(module)
 
 
 def get_parsl_config(config):
     """
     Retrieve and instantiate the registered Parsl config by name.
 
-    If the registry is empty, it auto-imports all modules
-    from the default `parsl_configs` package using :func:`auto_register_configs`.
-
-    The configuration is provided via the ``parsl_config`` field in
+    The configuration name is provided via the ``parsl_config`` field in
     :class:`~tools.config_manager.ConfigManager`.
 
     Args:
-        config (dict): Must contain the key ``parsl_config``
+        config (dict): Must contain the key ``parsl_config`` and ``parsl_configs_dir``
 
     Returns:
         parsl.config.Config: An instance of the selected Parsl configuration.
@@ -70,7 +75,11 @@ def get_parsl_config(config):
         SystemExit: If the specified config name is not registered.
     """
     if not PARSL_CONFIG_REGISTRY:
-        auto_register_configs("parsl_configs")
+        try:
+            configs_dir = config[CK.PARSL_CONFIGS_DIR]
+        except KeyError as e:
+            raise SystemExit(f"Missing required key '{CK.PARSL_CONFIGS_DIR}' in config.") from e
+        auto_register_configs(configs_dir)
 
     config_name = config[CK.PARSL_CONFIG]
     if config_name not in PARSL_CONFIG_REGISTRY:
