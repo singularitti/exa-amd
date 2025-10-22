@@ -97,6 +97,16 @@ Prediction of new CeFeIn compounds using this framework by the development team.
 
 <img width="677" alt="thrust1" src="https://github.com/user-attachments/assets/b067d23f-fd43-4409-b44b-01d1457bb440" />
 
+## How to cite
+
+If you use exa-AMD, please cite the following papers:
+
+- [arXiv:2510.01170](https://arxiv.org/abs/2510.01170)  
+- [arXiv:2506.21449](https://arxiv.org/abs/2506.21449)
+
+If you configure exa-AMD to make use of CGCNN for structure screening, please also cite the original CGCNN paper:  
+[https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.120.145301](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.120.145301)
+
 ## Contribute
 - **Propose changes** — [open a pull request](https://github.com/ML-AMD/exa-amd/pulls)
 - **Report issues** — [open an issue](https://github.com/ML-AMD/exa-amd/issues)
