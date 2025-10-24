@@ -9,6 +9,17 @@ from tools.config_labels import ConfigKeys as CK
 import ml_models.cgcnn as cgcnn_pkg
 
 
+def _parsl_worker_has_accel() -> bool:
+    return any(
+        v for v in (
+            os.environ.get("CUDA_VISIBLE_DEVICES"),
+            os.environ.get("ROCR_VISIBLE_DEVICES"),
+            os.environ.get("ZE_AFFINITY_MASK"),
+        )
+        if v not in ("", None)
+    )
+
+
 def cmd_cgcnn_prediction(config, n_chunks, id):
     """
     Prepare the working environment and build the command to run CGCNN predictions.
@@ -50,11 +61,12 @@ def cmd_cgcnn_prediction(config, n_chunks, id):
 
         dir_structures = os.path.join(config[CK.WORK_DIR], "structures", str(id))
         shutil.copy(atom_init_json, dir_structures)
+        num_workers = config[CK.NUM_WORKERS]
+        gpu_step_flag = "--gpus=1" if _parsl_worker_has_accel() else ""
     except Exception as e:
         raise
-    num_workers = config[CK.NUM_WORKERS]
     return (
-        f"srun -N 1 -n 1 --exclusive -c {num_workers} --gpus=1 "
+        f"srun -N 1 -n 1 --exclusive -c {num_workers} {gpu_step_flag} "
         f"python {predict_script_path} {model_path} {dir_structures} "
         f"--batch-size {config[CK.BATCH_SIZE]} --workers {num_workers} --chunk_id {id}"
     )

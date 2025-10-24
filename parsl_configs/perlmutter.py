@@ -81,7 +81,6 @@ class PerlmutterConfig(Config):
                 min_blocks=0,
                 max_blocks=1,
                 nodes_per_block=nnodes_cgcnn,
-                launcher=SingleNodeLauncher(),
                 walltime="01:00:00",
                 worker_init="module load conda/Miniforge3-24.7.1-0 && conda activate amd_env",
                 scheduler_options="#SBATCH --cpus-per-task=128\n#SBATCH --exclusive"
