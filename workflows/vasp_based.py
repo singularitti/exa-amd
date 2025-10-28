@@ -2,6 +2,7 @@ import os
 import time
 import pandas as pd
 import glob
+import parsl
 
 from tools.errors import VaspNonReached
 from parsl.app.errors import AppTimeout
@@ -9,6 +10,7 @@ from parsl.app.errors import BashExitFailure
 from tools.logging_config import amd_logger
 from tools.config_manager import ConfigManager
 from tools.config_labels import ConfigKeys as CK
+from parsl_configs.parsl_executors_labels import *
 
 from parsl_tasks.ehull import calculate_ehul
 from parsl_tasks.convex_hull import convex_hull_color
@@ -23,6 +25,17 @@ STATUS_BY_EXCEPTION = {
 
 def write_status(fp, id_, status):
     fp.write(f"{id_},{status}\n")
+
+
+def _collect_future_errors(futures, step_name: str) -> bool:
+    errors = []
+    for i, f in enumerate(futures, start=1):
+        exc = f.exception()
+        if exc is not None:
+            errors.append((i, exc))
+    if errors:
+        msgs = "; ".join(f"#{i}: {type(e).__name__}: {e}" for i, e in errors)
+        amd_logger.critical(f"{step_name} task failures: {msgs}")
 
 
 def vasp_calculations(config):
@@ -87,9 +100,7 @@ def generate_structures(config):
     try:
         n_chunks = config[CK.GEN_STRUCTURES_NNODES]
         l_futures = [gen_structures(config.get_json_config(), n_chunks, i) for i in range(1, n_chunks + 1)]
-
-        for future in l_futures:
-            future.result()
+        _collect_future_errors(l_futures, "generate_structures")
 
     except Exception as e:
         amd_logger.critical(f"An exception occurred: {e}")
@@ -132,14 +143,13 @@ def run_cgcnn(config):
     try:
         n_chunks = config[CK.GEN_STRUCTURES_NNODES]
         l_futures = [cgcnn_prediction(config.get_json_config(), n_chunks, i) for i in range(1, n_chunks + 1)]
-        for future in l_futures:
-            future.exception()
+        _collect_future_errors(l_futures, "cgcnn")
 
         # merge results
         pattern = os.path.join(config[CK.WORK_DIR], "test_results_*.csv")
         files_to_merge = list(glob.iglob(pattern))
         if not files_to_merge:
-            return
+            amd_logger.critical(f"CGCNN: failed to merge into test_results.csv")
 
         dataframes = pd.concat(
             (pd.read_csv(file, header=None) for file in files_to_merge),

@@ -10,14 +10,11 @@ import ml_models.cgcnn as cgcnn_pkg
 
 
 def _parsl_worker_has_accel() -> bool:
-    return any(
-        v for v in (
-            os.environ.get("CUDA_VISIBLE_DEVICES"),
-            os.environ.get("ROCR_VISIBLE_DEVICES"),
-            os.environ.get("ZE_AFFINITY_MASK"),
-        )
-        if v not in ("", None)
-    )
+    try:
+        import torch
+        return bool(getattr(torch, "cuda", None) and torch.cuda.is_available() and torch.cuda.device_count() > 0)
+    except Exception:
+        return False
 
 
 def cmd_cgcnn_prediction(config, n_chunks, id):
