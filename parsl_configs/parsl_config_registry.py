@@ -28,6 +28,17 @@ def register_parsl_config(config_name, config_class):
         config_name (str): The unique name that identifies the configuration.
         config_class (type): A callable or class that returns a Parsl `Config` object.
     """
+    if config_name in PARSL_CONFIG_REGISTRY:
+        prior = PARSL_CONFIG_REGISTRY[config_name]
+        p_mod = getattr(prior, "__module__", "<unknown_module>")
+        p_qual = getattr(prior, "__qualname__", getattr(prior, "__name__", "<unknown>"))
+        p_file = _PARSLCONFIG_ORIGINS.get(config_name, ("?", "?", "?"))[2]
+
+        amd_logger.critical(
+            "Duplicate Parsl config name '%s'. Existing: %s.%s (%s). "
+            "Duplicate: %s.%s (%s). Config names must be unique.",
+            config_name, p_mod, p_qual, p_file, mod, qual, src_file
+        )
     PARSL_CONFIG_REGISTRY[config_name] = config_class
 
 
@@ -45,7 +56,7 @@ def auto_register_configs(configs_dir):
         SystemExit: If the specified package cannot be found or loaded.
     """
     if not os.path.isdir(configs_dir):
-        raise SystemExit(f"Config directory '{configs_dir}' not found or not a directory.")
+        raise amd_logger.critical(f"Config directory '{configs_dir}' not found or not a directory.")
     dirpath = Path(configs_dir)
     for py in sorted(dirpath.glob("*.py")):
         if py.name.startswith("_"):
@@ -56,6 +67,9 @@ def auto_register_configs(configs_dir):
             module = importlib.util.module_from_spec(spec)
             sys.modules[modname] = module
             spec.loader.exec_module(module)
+
+    if not PARSL_CONFIG_REGISTRY:
+        amd_logger.critical(f"No Parsl configs were registered after scanning '{configs_dir}'. ")
 
 
 def get_parsl_config(config):
