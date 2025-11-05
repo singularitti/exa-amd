@@ -110,13 +110,13 @@ def get_vasp_hull(config):
 
         # gather the energy from the dft calculations
         os.chdir(config[CK.VASP_WORK_DIR])
-        ENERGY_DAT_OUT = CK.ENERGY_DAT_OUT
         cmd_get_energy = (
             f"grep -h 'F=' */output_*.en | "
             r"sed 's/^[[:blank:]]\+//' | "
             f"sort -t/ -k1,1n > {CK.ENERGY_DAT_OUT}"
         )
         result = subprocess.run(cmd_get_energy, shell=True)
+        is_empty = (not os.path.exists(CK.ENERGY_DAT_OUT)) or os.path.getsize(CK.ENERGY_DAT_OUT) == 0
         if result.returncode != 0:
             amd_logger.critical(f"{cmd_get_energy} failed")
 
@@ -160,9 +160,7 @@ def get_vasp_hull(config):
                     with p.open("rb") as inp:
                         copyfileobj(inp, out)
 
-            l_futures.append(
-                run_single_vasp_hull_calculation(
-                    config, calc_dir))
+            l_futures.append(run_single_vasp_hull_calculation(config, calc_dir))
 
         for future in l_futures:
             err = future.exception()

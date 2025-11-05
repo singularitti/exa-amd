@@ -56,7 +56,7 @@ def cmd_fused_vasp_calc(config, id, walltime=(int)):
     try:
         exec_cmd_prefix = (
             "" if config[CK.VASP_NTASKS_PER_RUN] == 1
-            else f"srun -n {config[CK.VASP_NTASKS_PER_RUN]}"
+            else f"srun -N 1 -n {config[CK.VASP_NTASKS_PER_RUN]} --exact --cpu-bind=cores"
         )
         work_subdir = os.path.join(config[CK.VASP_WORK_DIR], str(id))
         if not os.path.exists(work_subdir):
