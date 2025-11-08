@@ -21,16 +21,12 @@ def cmd_vasp_hull(config, work_subdir):
     :raises Exception: on directory navigation failures.
     """
     import os
-    try:
-        os.chdir(work_subdir)
-        exec_cmd_prefix = (
-            "" if config[CK.VASP_NTASKS_PER_RUN] == 1
-            else f"srun -N 1 -n {config[CK.VASP_NTASKS_PER_RUN]} --exact --cpu-bind=cores"
-        )
-        output_file = os.path.join(work_subdir, "output")
-    except Exception as e:
-        raise
-    return f" {exec_cmd_prefix} {config[CK.VASP_STD_EXE]} > {output_file}"
+    exec_cmd_prefix = (
+        "" if config[CK.VASP_NTASKS_PER_RUN] == 1
+        else f"srun -N 1 -n {config[CK.VASP_NTASKS_PER_RUN]} --exact --cpu-bind=cores"
+    )
+    output_file = os.path.join(work_subdir, "output")
+    return f"cd {work_subdir} && {exec_cmd_prefix} {config[CK.VASP_STD_EXE]} > {output_file}"
 
 
 @bash_app(executors=[POSTPROCESSING_LABEL])

@@ -308,15 +308,16 @@ def plot_convex_hull_ternary(elements_list, stable_dat, full_path_input_csv, thr
             mp_meta_stables,
             l0_meta_stables]
         if hullmax > 0:
-            ehulls, comps = zip(*sorted(zip(ehulls, comps)))
-            for eh, kkk in zip(ehulls, comps):
-                aaa = pts[kkk]
-                name = ele[0] + str(int(aaa[0])) + ele[1] + \
-                    str(int(aaa[1])) + ele[2] + str(int(aaa[2]))
-                formula = Composition(name).reduced_formula
+            pairs = list(sorted(zip(ehulls, comps)))
+            if pairs:
+                ehulls, comps = zip(*sorted(zip(ehulls, comps)))
+                for eh, kkk in zip(ehulls, comps):
+                    aaa = pts[kkk]
+                    name = ele[0] + str(int(aaa[0])) + ele[1] + \
+                        str(int(aaa[1])) + ele[2] + str(int(aaa[2]))
+                    formula = Composition(name).reduced_formula
 
-                fout.write(formula + '   ' + str(eh * 1000) + '\n')
-
+                    fout.write(formula + '   ' + str(eh * 1000) + '\n')
         fout.close()
 
         marker_vec = [6, 7, ".", "."]

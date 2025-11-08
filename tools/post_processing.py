@@ -38,37 +38,42 @@ def get_stable_phases(elements: List[str], api_key: str) -> List[Dict]:
     Returns:
         List of dictionaries containing structure information and phase type
     """
-    with MPRester(api_key) as mpr:
-        criteria = {
-            "elements": {"$in": elements, "$all": elements},
-            "energy_above_hull": {"$lte": 0.01}
-        }
+    properties = ["material_id", "formula_pretty", "structure", "elements"]
+    phases: List[Dict] = []
 
-        properties = ["material_id", "formula_pretty", "structure", "elements"]
-        # docs = mpr.summary.search(criteria=criteria, properties=properties)
-        phases = []
-        for ii in range(len(elements)):
-            for combo in combinations(elements, ii + 1):
+    # Return plain dicts (avoid document models to bypass pydantic/env skew issues)
+    with MPRester(api_key, use_document_model=False) as mpr:
+        for r in range(1, len(elements) + 1):
+            for combo in combinations(elements, r):
                 eles = list(combo)
-                # data=mpr.summary.search(num_elements=ii+1,is_stable=True,elements=eles)
-                docs = mpr.summary.search(
-                    num_elements=ii + 1, is_stable=True, elements=eles)
+
+                # Prefer 'fields=', fall back to 'properties=' (both seen across mp-api versions)
+                try:
+                    docs = mpr.summary.search(
+                        num_elements=r, is_stable=True, elements=eles, fields=properties
+                    )
+                except TypeError:
+                    docs = mpr.summary.search(
+                        num_elements=r, is_stable=True, elements=eles, properties=properties
+                    )
 
                 for doc in docs:
-                    # Determine if phase is elementary, binary, or ternary
-                    unique_elements = set(doc.elements)
+                    d = doc if isinstance(doc, dict) else dict(doc)
+                    unique_elements = set(d.get("elements", []) or [])
+                    if not unique_elements:
+                        continue
                     phase_type = "elementary" if len(unique_elements) == 1 else \
-                        "binary" if len(unique_elements) == 2 else "ternary"
+                        ("binary" if len(unique_elements) == 2 else "ternary")
 
                     phases.append({
-                        "material_id": doc.material_id,
-                        "formula": doc.formula_pretty,
-                        "structure": doc.structure,
+                        "material_id": d.get("material_id"),
+                        "formula": d.get("formula_pretty"),
+                        "structure": d.get("structure"),
                         "elements": list(unique_elements),
-                        "phase_type": phase_type
+                        "phase_type": phase_type,
                     })
 
-        return phases
+    return phases
 
 
 def get_vasp_hull(config):

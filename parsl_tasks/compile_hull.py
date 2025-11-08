@@ -66,11 +66,14 @@ def cmd_compile_vasp_hull(total_calcs, output_file, prefix):
 
     pairs.sort(key=lambda x: (x[0], x[1]))
     seen = set()
+    best = {}
+    for formula, epa in pairs:
+        if (formula not in seen) or (epa < best.get(formula, float("inf"))):
+            best[formula] = epa
+            seen.add(formula)
     with open(output_file, "w") as f:
-        for formula, epa in pairs:
-            if formula not in seen:
-                seen.add(formula)
-                f.write(f"{formula} {epa:.6f}\n")
+        for formula in set(best.keys()):
+            f.write(f"{formula} {best[formula]:.6f}\n")
 
 
 @python_app(executors=[POSTPROCESSING_LABEL])

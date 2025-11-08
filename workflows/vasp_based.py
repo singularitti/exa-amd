@@ -194,11 +194,11 @@ def post_processing(config):
 
         err = calculate_ehul(config).exception()
         if err:
-            amd_logger.critical(err)
+            amd_logger.critical(f"calculate_ehul {err}")
 
         err = convex_hull_color(config).exception()
         if err:
-            amd_logger.critical(err)
+            amd_logger.critical(f"convex_hull_color {err}")
 
         out_hull = os.path.join(
             config[CK.POST_PROCESSING_OUT_DIR], CK.POST_PROCESSING_FINAL_OUT)
