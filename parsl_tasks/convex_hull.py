@@ -259,24 +259,24 @@ def plot_convex_hull_ternary(elements_list, stable_dat, full_path_input_csv, thr
             formula = Composition(name).reduced_formula
             comps.append(k)
             ehulls.append(h)
-        # judge the label for aga, exp and mp
-        label = "000"
-        for ss in range(len(pts_aga)):
-            if (pts[k][-1] == pts_aga[ss][-1]):
-                label = "aga"
-                aga_meta_stables.append([float(pts[k][0]), float(
-                    pts[k][1]), float(pts[k][2]), pts[k][3], h])
-                break
-        for ss in range(len(pts_exp)):
-            if (pts[k][-1] == pts_exp[ss][-1]):
-                label = "exp"
-                exp_meta_stables.append([float(pts[k][0]), float(
-                    pts[k][1]), float(pts[k][2]), pts[k][3], h])
-        for ss in range(len(pts_mp)):
-            if (pts[k][-1] == pts_mp[ss][-1]):
-                label = "mp"
-                mp_meta_stables.append([float(pts[k][0]), float(
-                    pts[k][1]), float(pts[k][2]), pts[k][3], h])
+            # judge the label for aga, exp and mp
+            label = "000"
+            for ss in range(len(pts_aga)):
+                if (pts[k][-1] == pts_aga[ss][-1]):
+                    label = "aga"
+                    aga_meta_stables.append([float(pts[k][0]), float(
+                        pts[k][1]), float(pts[k][2]), pts[k][3], h])
+                    break
+            for ss in range(len(pts_exp)):
+                if (pts[k][-1] == pts_exp[ss][-1]):
+                    label = "exp"
+                    exp_meta_stables.append([float(pts[k][0]), float(
+                        pts[k][1]), float(pts[k][2]), pts[k][3], h])
+            for ss in range(len(pts_mp)):
+                if (pts[k][-1] == pts_mp[ss][-1]):
+                    label = "mp"
+                    mp_meta_stables.append([float(pts[k][0]), float(
+                        pts[k][1]), float(pts[k][2]), pts[k][3], h])
 
         for ka in range(len(tpts_l0)):
             x = tpts_l0[ka][:2]  # metastable, as [x,y,Ef]
@@ -356,9 +356,6 @@ def plot_convex_hull_ternary(elements_list, stable_dat, full_path_input_csv, thr
         # remove matplotlib axes
         tax.clear_matplotlib_ticks()
         tax.get_axes().axis('off')
-
-        ternary.plt.show()
-
         if output_file:
             ternary.plt.savefig(output_file, dpi=300)
         else:

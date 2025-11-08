@@ -116,9 +116,9 @@ def get_vasp_hull(config):
         # gather the energy from the dft calculations
         os.chdir(config[CK.VASP_WORK_DIR])
         cmd_get_energy = (
-            f"grep -h 'F=' */output_*.en | "
-            r"sed 's/^[[:blank:]]\+//' | "
-            f"sort -t/ -k1,1n > {CK.ENERGY_DAT_OUT}"
+            f"grep 'F=' */output_*.en | "
+            r"sed 's/\/output\.en://g' > "
+            f"{CK.ENERGY_DAT_OUT}"
         )
         result = subprocess.run(cmd_get_energy, shell=True)
         is_empty = (not os.path.exists(CK.ENERGY_DAT_OUT)) or os.path.getsize(CK.ENERGY_DAT_OUT) == 0
