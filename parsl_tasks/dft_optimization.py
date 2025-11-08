@@ -128,6 +128,10 @@ def cmd_fused_vasp_calc(config, id, walltime=(int)):
                 stderr=subprocess.STDOUT
             )
     finally:
+        try:
+            Path("DONE").touch()
+        except Exception:
+            pass
         cleanup()
 
 

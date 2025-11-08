@@ -11,26 +11,52 @@ from tools.logging_config import amd_logger
 from tools.config_labels import ConfigKeys as CK
 
 
-def _find_next_vasp_structure(work_dir):
-    """Helper: Find what should be the next VASP calculation"""
-    # Get current directory contents
-    contents = os.listdir(work_dir)
+def _collect_batch_ids(vasp_work_dir: str, structure_dir: str, nstructures: int) -> list[int]:
+    """Helper: Find what should be the next VASP calculations"""
+    poscar_ids = set()
+    for name in os.listdir(structure_dir):
+        m = re.match(r"POSCAR_(\d+)$", name)
+        if m:
+            poscar_ids.add(int(m.group(1)))
+    if not poscar_ids:
+        return []
 
-    # Filter only directories and find those that match numeric pattern
-    numbered_dirs = []
-    for item in contents:
-        if os.path.isdir(os.path.join(work_dir, item)):
-            # Try to extract a number from the directory name
-            match = re.search(r'^\d+', item)
-            if match:
-                numbered_dirs.append(int(match.group()))
+    max_possible_id = max(poscar_ids)
 
-    if not numbered_dirs:
-        return 1  # If no numbered directories exist, start with 1
+    # existing run directories and which are unfinished
+    existing_ids = []
+    unfinished = []
+    for name in os.listdir(vasp_work_dir):
+        if name.isdigit():
+            i = int(name)
+            existing_ids.append(i)
+            if not (Path(vasp_work_dir) / name / "DONE").exists():
+                if i in poscar_ids:
+                    unfinished.append(i)
+                    # ensure clean rerun
+                    try:
+                        p_pot = Path(vasp_work_dir) / name / "POTCAR"
+                        if p_pot.exists() or p_pot.is_symlink():
+                            p_pot.unlink()
+                    except Exception:
+                        pass
 
-    # Find the highest number and add 1
-    next_number = max(numbered_dirs) + 1
-    return next_number
+    existing_ids.sort()
+    unfinished = sorted(set(unfinished))
+
+    new_ids = sorted(poscar_ids - set(existing_ids))
+
+    if nstructures == -1:
+        return unfinished + new_ids
+
+    need = max(nstructures, 0)
+    take_unfinished = unfinished[:need]
+    need -= len(take_unfinished)
+    if need > 0:
+        take_new = new_ids[:need]
+    else:
+        take_new = []
+    return take_unfinished + take_new
 
 
 class ConfigManager:
@@ -208,43 +234,45 @@ class ConfigManager:
             parser.parse_args()
 
     def setup_vasp_calculations(self):
-        """
-        Calculate nstart and nend for VASP calculations.
-        All structures in [nstart, nend) will be run.
-        """
+        """calculate which VASP structures should be run"""
         work_dir = self.config[CK.WORK_DIR]
-        structure_dir = os.path.join(self.config[CK.WORK_DIR], "new")
-        structure_files = [
-            f for f in os.listdir(structure_dir) if f.startswith("POSCAR_")
-        ]
-        total_num_structures = len(structure_files)
-        num_strs = self.config[CK.NUM_STRS]
-        nstart = _find_next_vasp_structure(self.config[CK.VASP_WORK_DIR])
+        vasp_work_dir = self.config[CK.VASP_WORK_DIR]
+        structure_dir = os.path.join(work_dir, "new")
 
-        nend = total_num_structures + 1
-        if num_strs != -1:
-            nend = min(nstart + num_strs, nend)
+        num_strs = int(self.config[CK.NUM_STRS])  # -1 means "run all remaining"
+        id_list = _collect_batch_ids(vasp_work_dir, structure_dir, num_strs)
 
-        self.config["nstart"] = nstart
-        self.config["nend"] = nend
+        # save the list in the config
+        self.config[CK.VASP_ID_STRUCT_LIST] = id_list
 
-        # create the POTCAR file
+        # POTCAR creation
         elements = self.config[CK.ELEMENTS].split('-')
         nb_of_elements = len(elements)
-
         if nb_of_elements < 3 or nb_of_elements > 4:
-            amd_logger.critical(
-                f"exa-AMD only supports ternary and quaternary systems")
+            amd_logger.critical("exa-AMD only supports ternary and quaternary systems")
 
         POTDIR = self.config[CK.POT_DIR]
-        # create the POTCAR file
-        potcar_paths = [Path(POTDIR) / el / "POTCAR" for el in elements]
         out_path = Path(work_dir) / "POTCAR"
-
+        potcar_paths = [Path(POTDIR) / el / "POTCAR" for el in elements]
+        from shutil import copyfileobj
         with out_path.open("wb") as out:
             for p in potcar_paths:
                 with p.open("rb") as inp:
                     copyfileobj(inp, out, length=1024 * 1024)
+
+        if id_list:
+            ranges = []
+            start = prev = id_list[0]
+            for i in id_list[1:]:
+                if i == prev + 1:
+                    prev = i
+                else:
+                    ranges.append(str(start) if start == prev else f"{start}-{prev}")
+                    start = prev = i
+            ranges.append(str(start) if start == prev else f"{start}-{prev}")
+            amd_logger.info(f"Launching VASP structures: {', '.join(ranges)}")
+        else:
+            amd_logger.info("VASP structures: NONE")
 
     def _create_potcar(self):
         POTDIR = self.config[CK.POT_DIR]

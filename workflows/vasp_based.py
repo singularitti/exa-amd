@@ -43,7 +43,7 @@ def vasp_calculations(config):
     Run two-stage VASP calculations for all selected structures and log outcomes.
 
     Launches :func:`parsl_tasks.dft_optimization.run_vasp_calc` for each ID in
-    ``[config["nstart"], config["nend"])``. Writes a CSV of per-ID results to
+    ``{config[CK.VASP_ID_STRUCT_LIST]}``. Writes a CSV of per-ID results to
     ``{config[CK.VASP_WORK_DIR]}/{config[CK.OUTPUT_FILE]}``.
 
     :param ConfigManager config: workflow configuration
@@ -60,12 +60,13 @@ def vasp_calculations(config):
 
     # open the output file to log the structures that failed or succeded to
     # converge
-    fp = open(output_file_vasp_calc, 'w')
+    fp_mode = "a" if os.path.exists(output_file_vasp_calc) else "w"
+    fp = open(output_file_vasp_calc, fp_mode)
     fp.write("id,result\n")
 
     # launch all vasp calculations
     l_futures = [(run_vasp_calc(config.get_json_config(), i), i)
-                 for i in range(config["nstart"], config["nend"])]
+                 for i in config[CK.VASP_ID_STRUCT_LIST]]
 
     # wait for all the tasks (in the batch) to complete
     for future, id in l_futures:

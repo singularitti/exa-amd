@@ -38,3 +38,4 @@ class ConfigKeys:
     MP_STABLE_OUT = "mp_int_stable.dat"
     ENERGY_DAT_OUT = "energy.dat"
     POST_PROCESSING_FINAL_OUT = "hull_plot.png"
+    VASP_ID_STRUCT_LIST = "vasp_id_struct_list"
