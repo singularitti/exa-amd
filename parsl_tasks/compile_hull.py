@@ -19,7 +19,7 @@ def cmd_compile_vasp_hull(total_calcs, output_file, prefix):
         outcar = os.path.join(calc_dir, "OUTCAR")
 
         formula = ""
-        energy = None
+        energy = 0.0
         natoms = None
 
         try:
@@ -59,7 +59,7 @@ def cmd_compile_vasp_hull(total_calcs, output_file, prefix):
         except FileNotFoundError:
             pass
 
-        if (energy is not None) and (natoms is not None):
+        if natoms is not None:
             tenergy = float(f"{energy:.6f}")
             epa = float(f"{tenergy / natoms:.6f}")
             pairs.append((formula, epa))
@@ -72,7 +72,7 @@ def cmd_compile_vasp_hull(total_calcs, output_file, prefix):
             best[formula] = epa
             seen.add(formula)
     with open(output_file, "w") as f:
-        for formula in set(best.keys()):
+        for formula in sorted(best.keys()):
             f.write(f"{formula} {best[formula]:.6f}\n")
 
 
