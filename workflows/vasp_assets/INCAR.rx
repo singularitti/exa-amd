@@ -1,6 +1,3 @@
-# incar
-SYSTEM = LaSiP
-
  Startparameter for this Run:
    NWRITE =    2        default is 2
    ISTART =    0        job   : 0-new  1-cont  2-same basic set
@@ -23,6 +20,4 @@ SYSTEM = LaSiP
     ISMEAR =   0        -1: Fermi smearing, 0: Gaussian smearing, 1..N: Methfessel-Paxton order N ...
     SIGMA  =   0.05     broadening in eV
     KPAR = 1   
-#    NPAR  =   8
-#    NCORE =   8
 

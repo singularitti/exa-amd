@@ -40,6 +40,10 @@ def cmd_fused_vasp_calc(config, id, walltime=(int)):
     import os
     import shutil
     import time
+    import re
+    import subprocess
+    from importlib import resources as iresources
+    from pathlib import Path
     from tools.errors import VaspNonReached
 
     def cleanup():
@@ -59,26 +63,29 @@ def cmd_fused_vasp_calc(config, id, walltime=(int)):
             else f"srun -N 1 -n {config[CK.VASP_NTASKS_PER_RUN]} --exact --cpu-bind=cores"
         )
         work_subdir = os.path.join(config[CK.VASP_WORK_DIR], str(id))
-        if not os.path.exists(work_subdir):
-            os.makedirs(work_subdir)
+        os.makedirs(work_subdir, exist_ok=True)
         os.chdir(work_subdir)
 
         #
         # prepare relaxation
         #
-        output_file = os.path.join(work_subdir, "output.rx")
+        output_rx = Path(work_subdir) / "output.rx"
 
         vasp_std_exe = config[CK.VASP_STD_EXE]
         poscar = os.path.join(config[CK.WORK_DIR], "new", f"POSCAR_{id}")
-        with pkg_resources.path("workflows.vasp_assets", "INCAR.rx") as p:
-            incar = str(p)
-        os.symlink(os.path.join(config[CK.WORK_DIR], "POTCAR"), "POTCAR")
+        with iresources.as_file(iresources.files("workflows.vasp_assets") / "INCAR.rx") as p:
+            incar_src = str(p)
 
-        # relaxation
+        # POTCAR symlink
+        potcar_src = os.path.join(config[CK.WORK_DIR], "POTCAR")
+        if not Path("POTCAR").exists():
+            os.symlink(potcar_src, "POTCAR")
+
+        # relaxation inputs
         shutil.copy(poscar, os.path.join(work_subdir, "POSCAR"))
-        shutil.copy(incar, os.path.join(work_subdir, "INCAR"))
+        shutil.copy(incar_src, os.path.join(work_subdir, "INCAR"))
 
-        # Change NSW iterations
+        # set NSW in INCAR
         VASP_NSW = config[CK.VASP_NSW]
         incar = Path("INCAR")
 
@@ -87,46 +94,62 @@ def cmd_fused_vasp_calc(config, id, walltime=(int)):
         incar.write_text(text)
 
         # run relaxation
-        with open(output_file, "w") as out:
-            result = subprocess.run(
+        with open(output_rx, "w") as out:
+            rc = subprocess.run(
                 ["timeout", str(config[CK.VASP_TIMEOUT]), *exec_cmd_prefix.split(), vasp_std_exe],
                 stdout=out,
                 stderr=subprocess.STDOUT
             )
-        relaxation_status = result.returncode
+            if rc.returncode != 0:
+                raise VaspNonReached(f"VASP exited with {rc} during relaxation")
 
-        #
-        # prepare energy calculation
-        #
-        output_rx = Path(work_subdir) / "output.rx"
-        relaxation_criteria = 1
-        with open(output_rx, "r") as f:
-            for line in f:
-                if "reached" in line or f"{VASP_NSW} F=" in line:
-                    relaxation_criteria = 0
-                    break
+        #  grep "reached"
+        out_text = output_rx.read_text(errors="ignore")
+        reached = ("reached" in out_text.lower())
 
-        # check relaxation criteria
-        if relaxation_status != 0 and relaxation_criteria != 0:
+        # grep "{NSW} F="
+        re_nsw = re.compile(rf"(?m)^\s*{VASP_NSW}\s+F=")
+        hit_nsw = bool(re_nsw.search(out_text))
+
+        if reached:
+            os.rename("OUTCAR", f"OUTCAR_{id}.rx")
+            shutil.copy("CONTCAR", os.path.join(work_subdir, f"CONTCAR_{id}"))
+
+        elif hit_nsw:
+            # re-run relaxation from CONTCAR -> POSCAR
+            shutil.copy("CONTCAR", "POSCAR")
+            with open(output_rx, "w") as out:
+                rc = subprocess.run(
+                    ["timeout", str(config[CK.VASP_TIMEOUT]), *exec_cmd_prefix.split(), vasp_std_exe],
+                    stdout=out,
+                    stderr=subprocess.STDOUT
+                )
+                if rc.returncode != 0:
+                    raise VaspNonReached(f"VASP exited with {rc} during 2nd relaxation")
+
+            shutil.copy("CONTCAR", os.path.join(work_subdir, f"CONTCAR_{id}"))
+            os.rename("OUTCAR", f"OUTCAR_{id}.rx")
+
+        else:
             raise VaspNonReached
 
-        with pkg_resources.path("workflows.vasp_assets", "INCAR.en") as p:
+        # energy calculation
+        with iresources.as_file(iresources.files("workflows.vasp_assets") / "INCAR.en") as p:
             incar_en = str(p)
 
         output_file_en = os.path.join(work_subdir, f"output_{id}.en")
 
-        os.rename("OUTCAR", f"OUTCAR_{id}.rx")
-        shutil.copy("CONTCAR", os.path.join(work_subdir, f"CONTCAR_{id}"))
         shutil.copy("CONTCAR", "POSCAR")
         shutil.copy(incar_en, "INCAR")
 
-        # run relaxation
         with open(output_file_en, "w") as out:
-            result = subprocess.run(
+            subprocess.run(
                 ["timeout", str(config[CK.VASP_TIMEOUT]), *exec_cmd_prefix.split(), vasp_std_exe],
                 stdout=out,
                 stderr=subprocess.STDOUT
             )
+        os.rename("OUTCAR", f"OUTCAR_{id}.en")
+
     finally:
         try:
             Path("DONE").touch()

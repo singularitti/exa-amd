@@ -143,7 +143,7 @@ def get_vasp_hull(config):
             calc_id = i + 1
             calc_dir = os.path.join(VASP_CALCS_DIR, f"calc_{calc_id}")
             os.makedirs(calc_dir, exist_ok=True)
-            phase['structure'].to(filename=os.path.join(calc_dir, "POSCAR"))
+            phase["structure"].to(fmt="poscar", filename=os.path.join(calc_dir, "POSCAR"))
 
             # Copy INCAR
             if any(Element(magele) in phase['elements'] for magele in mageles):
