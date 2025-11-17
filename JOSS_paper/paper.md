@@ -24,7 +24,7 @@ authors:
 affiliations:
   - name: Los Alamos National Laboratory, Los Alamos, NM 87545, United States of America
     index: 1
-  - name: Ames Laboratory, US DOE and Department of Physics and Astronomy, Iowa State University, Ames, Iowa 50011, United States
+  - name: Ames Laboratory, US DOE and Department of Physics and Astronomy, Iowa State University, Ames, Iowa 50011, United States of America
     index: 2
 date: June 25, 2025
 bibliography: "exa_amd_joss.bib"
