@@ -1,0 +1,50 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Moraru
+  given-names: Maxim
+- family-names: Xia
+  given-names: Weiyi
+- family-names: Ye
+  given-names: Zhuo
+- family-names: Zhang
+  given-names: Feng
+- family-names: Yao
+  given-names: Yongxin
+- family-names: Li
+  given-names: Ying Wai
+- family-names: Wang
+  given-names: Cai-Zhuang
+doi: 10.5281/zenodo.17477447
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Moraru
+    given-names: Maxim
+  - family-names: Xia
+    given-names: Weiyi
+  - family-names: Ye
+    given-names: Zhuo
+  - family-names: Zhang
+    given-names: Feng
+  - family-names: Yao
+    given-names: Yongxin
+  - family-names: Li
+    given-names: Ying Wai
+  - family-names: Wang
+    given-names: Cai-Zhuang
+  date-published: 2025-11-17
+  doi: 10.21105/joss.08879
+  issn: 2475-9066
+  issue: 115
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 8879
+  title: "exa-AMD: A Scalable Workflow for Accelerating AI-Assisted
+    Materials Discovery and Design"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.08879"
+  volume: 10
+title: "exa-AMD: A Scalable Workflow for Accelerating AI-Assisted
+  Materials Discovery and Design"
