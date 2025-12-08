@@ -36,6 +36,10 @@ This package contains a modified version of Crystal Graph Convolutional Neural N
 ## Install
 ### CLI (preferred)
 ```bash
+# (Recommended) create & activate a fresh virtual environment
+# python -m venv myenv
+# source myenv/bin/activate
+# python -m pip install --upgrade pip
 pip install "https://github.com/ML-AMD/exa-amd/releases/download/v0.1.0/exa_amd-0.1.0-py3-none-any.whl"
 exa_amd --help
 ```
