@@ -12,7 +12,7 @@ from tools.config_labels import ConfigKeys as CK
 badele_vec = ['D', 'He', 'Ne', 'Ar', 'Br', 'Kr', 'Tc', 'Xe', 'At', 'Rn', 'Pm', 'Fr', 'Rf',
               'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og',
               'Ac', 'Th', 'Pa', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr',
-              'F', 'Cl', 'Br', 'I', 'O']
+             ]
 
 LATTICE_SCALES = [0.96, 0.98, 1.0, 1.02, 1.04]
 
